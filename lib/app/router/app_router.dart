@@ -13,6 +13,7 @@ import 'package:quiztech/features/quiz/presentation/view/quiz_play_screen.dart';
 import 'package:quiztech/features/score/presentation/view/score_screen.dart';
 
 import 'app_routes.dart';
+import 'route_transitions.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _homeNavigatorKey = GlobalKey<NavigatorState>();
@@ -86,14 +87,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: AppRoutes.quizDetails,
-        builder: (context, state) =>
-            QuizDetailsScreen(quizDetail: state.extra as QuizDetail),
+        pageBuilder: (context, state) => slideFadePage(
+          state: state,
+          child: QuizDetailsScreen(quizDetail: state.extra as QuizDetail),
+        ),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: AppRoutes.quizPlay,
-        builder: (context, state) =>
-            QuizPlayScreen(quizDetail: state.extra as QuizDetail),
+        pageBuilder: (context, state) => slideFadePage(
+          state: state,
+          child: QuizPlayScreen(quizDetail: state.extra as QuizDetail),
+        ),
       ),
     ],
   );

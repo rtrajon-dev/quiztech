@@ -269,66 +269,100 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
                       SizedBox(height: 25.h),
                       _buildProgressRow(quiz),
                       SizedBox(height: 24.h),
-                      SizedBox(
-                        height: 60,
-                        child: Text(
-                          currentQuestion.text,
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontFamily: 'Ubuntu',
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
+                      // Animate the question + options between questions so the
+                      // transition feels fluid instead of snapping.
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 320),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        layoutBuilder: (currentChild, previousChildren) => Stack(
+                          alignment: Alignment.topLeft,
+                          children: [
+                            ...previousChildren,
+                            if (currentChild != null) currentChild,
+                          ],
+                        ),
+                        transitionBuilder: (child, animation) => FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0.12, 0),
+                              end: Offset.zero,
+                            ).animate(animation),
+                            child: child,
                           ),
                         ),
-                      ),
-                      SizedBox(height: 20.h),
-                      Column(
-                        children: currentQuestion.options.map((option) {
-                          return Padding(
-                            padding: EdgeInsets.only(bottom: 12.h),
-                            child: GestureDetector(
-                              onTap: answeredQuestions
-                                          .contains(currentQuestion.id) ||
-                                      timeUp
-                                  ? null
-                                  : () {
-                                      setState(() {
-                                        selectedAnswers[currentQuestion.id] =
-                                            option.id;
-                                        answeredQuestions
-                                            .add(currentQuestion.id);
-
-                                        if (option.id ==
-                                            currentQuestion.correctOptionId) {
-                                          isCorrect = true;
-                                          feedbackText = "Correct!";
-                                          feedbackColor = Colors.green;
-                                          playCorrectSound();
-                                        } else {
-                                          isCorrect = false;
-                                          feedbackText =
-                                              "Wrong! Correct answer: ${currentQuestion.options.firstWhere((o) => o.id == currentQuestion.correctOptionId).text}";
-                                          feedbackColor = Colors.red;
-                                          playWrongSound();
-                                        }
-
-                                        _saveProgress();
-                                        countdownTimer?.cancel();
-
-                                        Future.delayed(
-                                            const Duration(seconds: 3), () {
-                                          if (mounted) {
-                                            setState(() {
-                                              feedbackText = "";
-                                            });
-                                          }
-                                        });
-                                      });
-                                    },
-                              child: _buildOption(option, currentQuestion),
+                        child: Column(
+                          key: ValueKey(currentQuestionIndex),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              height: 60,
+                              child: Text(
+                                currentQuestion.text,
+                                style: TextStyle(
+                                  fontSize: 16.sp,
+                                  fontFamily: 'Ubuntu',
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black,
+                                ),
+                              ),
                             ),
-                          );
-                        }).toList(),
+                            SizedBox(height: 20.h),
+                            Column(
+                              children: currentQuestion.options.map((option) {
+                                return Padding(
+                                  padding: EdgeInsets.only(bottom: 12.h),
+                                  child: GestureDetector(
+                                    onTap: answeredQuestions
+                                                .contains(currentQuestion.id) ||
+                                            timeUp
+                                        ? null
+                                        : () {
+                                            setState(() {
+                                              selectedAnswers[
+                                                      currentQuestion.id] =
+                                                  option.id;
+                                              answeredQuestions
+                                                  .add(currentQuestion.id);
+
+                                              if (option.id ==
+                                                  currentQuestion
+                                                      .correctOptionId) {
+                                                isCorrect = true;
+                                                feedbackText = "Correct!";
+                                                feedbackColor = Colors.green;
+                                                playCorrectSound();
+                                              } else {
+                                                isCorrect = false;
+                                                feedbackText =
+                                                    "Wrong! Correct answer: ${currentQuestion.options.firstWhere((o) => o.id == currentQuestion.correctOptionId).text}";
+                                                feedbackColor = Colors.red;
+                                                playWrongSound();
+                                              }
+
+                                              _saveProgress();
+                                              countdownTimer?.cancel();
+
+                                              Future.delayed(
+                                                  const Duration(seconds: 3),
+                                                  () {
+                                                if (mounted) {
+                                                  setState(() {
+                                                    feedbackText = "";
+                                                  });
+                                                }
+                                              });
+                                            });
+                                          },
+                                    child:
+                                        _buildOption(option, currentQuestion),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
                       ),
                       SizedBox(height: 40.h),
                       AnimatedOpacity(
