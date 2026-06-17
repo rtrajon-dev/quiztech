@@ -150,7 +150,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               children: [
                                 GestureDetector(
                                   onTap: isOngoing
-                                      ? null
+                                      ? () {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                "You already started this — resume it from \"Continue Pending Quizzes\" below.",
+                                              ),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                            ),
+                                          );
+                                        }
                                       : () {
                                           final quizDetail =
                                               quizDetails.firstWhere(
@@ -281,12 +292,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   if (catalogState.allPlayedQuizzes.isNotEmpty) ...[
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Text("Continue Pending Quizzes",
-                          style: TextStyle(
-                              fontSize: 18.sp,
-                              fontFamily: "Ubuntu",
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Continue Pending Quizzes",
+                              style: TextStyle(
+                                  fontSize: 18.sp,
+                                  fontFamily: "Ubuntu",
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold)),
+                          SizedBox(height: 2.h),
+                          Row(
+                            children: [
+                              Icon(Icons.timer_outlined,
+                                  size: 13.sp, color: Colors.grey),
+                              SizedBox(width: 4.w),
+                              Flexible(
+                                child: Text(
+                                  "Quizzes you skipped — resume before the timer ends",
+                                  style: TextStyle(
+                                    fontSize: 11.sp,
+                                    fontFamily: "Ubuntu",
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                   SizedBox(height: 15.h),

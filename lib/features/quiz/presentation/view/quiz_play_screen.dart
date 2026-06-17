@@ -164,6 +164,22 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
     await _box.put('all_quizzes', allProgress);
   }
 
+  /// Saves the current progress and leaves the quiz, confirming to the user
+  /// that they can resume it later (and that it is time-limited).
+  void _saveAndExit() {
+    _saveProgress();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          "Saved! Resume this quiz from Home before the timer runs out.",
+        ),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 3),
+      ),
+    );
+    context.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final quiz = widget.quizDetail;
@@ -185,10 +201,7 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         leading: IconButton(
-          onPressed: () {
-            _saveProgress();
-            context.pop();
-          },
+          onPressed: _saveAndExit,
           icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
         backgroundColor: Colors.transparent,
@@ -242,7 +255,7 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
               SizedBox(height: 100.h),
               Container(
                 width: double.infinity,
-                height: 760.h,
+                constraints: BoxConstraints(minHeight: 760.h),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.only(
@@ -539,6 +552,26 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
                           ),
                         ],
                       ),
+                      SizedBox(height: 16.h),
+                      // Explicit "play later" affordance so users know they can
+                      // leave and resume the quiz before its timer expires.
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: _saveAndExit,
+                          icon: const Icon(Icons.bookmark_add_outlined,
+                              color: Colors.blue),
+                          label: Text(
+                            "Save & Play Later",
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontFamily: 'Ubuntu',
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14.sp,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 28.h),
                     ],
                   ),
                 ),
