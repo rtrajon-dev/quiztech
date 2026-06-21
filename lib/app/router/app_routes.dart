@@ -2,6 +2,7 @@
 class AppRoutes {
   // Auth
   static const login = '/login';
+  static const signup = '/signup';
 
   // Main app — tab shell branches
   static const home = '/home';

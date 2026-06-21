@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:quiztech/app/shell/main_shell_page.dart';
 import 'package:quiztech/features/auth/presentation/view/login_screen.dart';
+import 'package:quiztech/features/auth/presentation/view/signup_screen.dart';
 import 'package:quiztech/features/auth/presentation/viewmodel/auth_viewmodel.dart';
 import 'package:quiztech/features/home/presentation/view/home_screen.dart';
 import 'package:quiztech/features/profile/presentation/view/profile_screen.dart';
@@ -35,16 +36,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       // Wait for the persisted session to load before deciding.
       if (!auth.isInitialized) return null;
 
-      final loggingIn = state.matchedLocation == AppRoutes.login;
+      final location = state.matchedLocation;
+      final onAuthPage =
+          location == AppRoutes.login || location == AppRoutes.signup;
 
-      if (!auth.isLoggedIn) return loggingIn ? null : AppRoutes.login;
-      if (loggingIn) return AppRoutes.home;
+      if (!auth.isLoggedIn) return onAuthPage ? null : AppRoutes.login;
+      if (onAuthPage) return AppRoutes.home;
       return null;
     },
     routes: [
       GoRoute(
         path: AppRoutes.login,
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.signup,
+        builder: (context, state) => const SignUpScreen(),
       ),
 
       // Main app: bottom-nav shell with 3 tab branches.

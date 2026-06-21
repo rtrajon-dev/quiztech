@@ -3,24 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:form_field_validator/form_field_validator.dart';
-import 'package:go_router/go_router.dart';
 
-import 'package:quiztech/app/router/app_routes.dart';
 import 'package:quiztech/features/auth/presentation/viewmodel/auth_viewmodel.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+class SignUpScreen extends ConsumerStatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   bool _obscurePassword = true;
+  bool _obscureConfirm = true;
   late FToast fToast;
 
   @override
@@ -34,6 +34,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
+    confirmController.dispose();
     super.dispose();
   }
 
@@ -61,19 +62,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Future<void> handleLogin() async {
+  Future<void> handleSignUp() async {
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      await ref.read(authViewModelProvider.notifier).login(
+      await ref.read(authViewModelProvider.notifier).register(
             emailController.text.trim(),
             passwordController.text.trim(),
           );
 
-      // The GoRouter redirect navigates to Home once the session is set.
-      showBottomToast("Login successful", bgColor: Colors.blue);
+      // The GoRouter redirect navigates to Home once the account is created.
+      showBottomToast("Account created", bgColor: Colors.blue);
     } on FirebaseAuthException catch (e) {
-      showBottomToast(e.message ?? "Login failed", bgColor: Colors.red);
+      showBottomToast(e.message ?? "Sign up failed", bgColor: Colors.red);
     }
   }
 
@@ -113,8 +114,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
-              // Login Form
+              const SizedBox(height: 24),
+              const Text(
+                "Create Account",
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Sign Up Form
               Form(
                 key: _formKey,
                 child: Column(
@@ -122,11 +131,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     TextFormField(
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
-                      validator:
-                          RequiredValidator(errorText: "Enter email").call,
+                      validator: MultiValidator([
+                        RequiredValidator(errorText: "Enter email"),
+                        EmailValidator(errorText: "Enter a valid email"),
+                      ]).call,
                       decoration: InputDecoration(
                         labelText: "Email",
-                        hintText: "Enter any email",
+                        hintText: "Enter your email",
                         prefixIcon:
                             const Icon(Icons.email, color: Colors.green),
                         border: OutlineInputBorder(
@@ -138,11 +149,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     TextFormField(
                       controller: passwordController,
                       obscureText: _obscurePassword,
-                      validator:
-                          RequiredValidator(errorText: "Enter password").call,
+                      validator: MultiValidator([
+                        RequiredValidator(errorText: "Enter password"),
+                        MinLengthValidator(6,
+                            errorText: "At least 6 characters"),
+                      ]).call,
                       decoration: InputDecoration(
                         labelText: "Password",
-                        hintText: "Enter any password",
+                        hintText: "Enter a password",
                         prefixIcon:
                             const Icon(Icons.lock, color: Colors.green),
                         suffixIcon: IconButton(
@@ -162,26 +176,47 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          showBottomToast("Forgot password clicked",
-                              bgColor: Colors.orange);
-                        },
-                        child: const Text(
-                          "Forgot Password?",
-                          style: TextStyle(color: Colors.green),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: confirmController,
+                      obscureText: _obscureConfirm,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Confirm your password";
+                        }
+                        if (value != passwordController.text) {
+                          return "Passwords do not match";
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        labelText: "Confirm Password",
+                        hintText: "Re-enter your password",
+                        prefixIcon:
+                            const Icon(Icons.lock_outline, color: Colors.green),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirm
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirm = !_obscureConfirm;
+                            });
+                          },
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
                       height: 55,
                       child: ElevatedButton(
-                        onPressed: isLoading ? null : handleLogin,
+                        onPressed: isLoading ? null : handleSignUp,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           shape: RoundedRectangleBorder(
@@ -193,7 +228,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ? const CircularProgressIndicator(
                                 color: Colors.white)
                             : const Text(
-                                "Login",
+                                "Sign Up",
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 20,
@@ -203,15 +238,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Go to sign up
+                    // Back to login
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Don't have an account?"),
+                        const Text("Already have an account?"),
                         TextButton(
-                          onPressed: () => context.push(AppRoutes.signup),
+                          onPressed: () => Navigator.of(context).pop(),
                           child: const Text(
-                            "Sign Up",
+                            "Login",
                             style: TextStyle(
                               color: Colors.green,
                               fontWeight: FontWeight.bold,
