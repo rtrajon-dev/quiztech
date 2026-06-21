@@ -1,5 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// Immutable auth state surfaced to the UI.
 class AuthState {
@@ -31,62 +31,76 @@ class AuthState {
   }
 }
 
-/// Blank/offline auth.
+/// Firebase-backed auth.
 ///
-/// There is no backend: any non-empty credential pair is accepted and a fake
-/// user profile is synthesized from the email. The session flag and the email
-/// are persisted in [SharedPreferences] so a relaunch keeps the user signed in.
+/// State is driven by Firebase's own [FirebaseAuth.authStateChanges] stream:
+/// it fires once on launch with the restored (cached) session, and again on
+/// every sign-in / sign-out. Firebase persists the session itself, so no
+/// SharedPreferences flag is needed anymore.
 class AuthViewModel extends Notifier<AuthState> {
-  static const _kLoggedIn = 'auth_logged_in';
-  static const _kEmail = 'auth_email';
+  FirebaseAuth get _auth => FirebaseAuth.instance;
 
   @override
   AuthState build() {
-    _restoreSession();
+    final sub = _auth.authStateChanges().listen(_onAuthChanged);
+    ref.onDispose(sub.cancel);
     return const AuthState();
   }
 
-  Future<void> _restoreSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    final loggedIn = prefs.getBool(_kLoggedIn) ?? false;
-    final email = prefs.getString(_kEmail);
+  void _onAuthChanged(User? user) {
+    state = state.copyWith(
+      isInitialized: true,
+      user: user == null ? null : _buildUser(user),
+      clearUser: user == null,
+    );
+  }
 
-    if (loggedIn && email != null) {
-      state = state.copyWith(
-        isInitialized: true,
-        user: _buildUser(email),
+  /// Sign in an existing account. Throws [FirebaseAuthException] on failure.
+  Future<void> login(String email, String password) async {
+    state = state.copyWith(isLoading: true);
+    try {
+      await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
       );
-    } else {
-      state = state.copyWith(isInitialized: true);
+      // No manual state set: authStateChanges() pushes the user for us.
+    } finally {
+      state = state.copyWith(isLoading: false);
     }
   }
 
-  /// Accepts any credentials. No network call is made.
-  Future<void> login(String email, String password) async {
+  /// Create a new account. Throws [FirebaseAuthException] on failure.
+  Future<void> register(String email, String password) async {
     state = state.copyWith(isLoading: true);
+    try {
+      await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } finally {
+      state = state.copyWith(isLoading: false);
+    }
+  }
 
-    // Simulate a brief auth round-trip so the spinner is visible.
-    await Future.delayed(const Duration(milliseconds: 400));
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_kLoggedIn, true);
-    await prefs.setString(_kEmail, email);
-
-    state = state.copyWith(isLoading: false, user: _buildUser(email));
+  /// Send a password-reset email. Throws [FirebaseAuthException] on failure.
+  Future<void> sendPasswordReset(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kLoggedIn);
-    await prefs.remove(_kEmail);
-    state = state.copyWith(clearUser: true);
+    await _auth.signOut(); // authStateChanges() clears the user.
   }
 
-  Map<String, dynamic> _buildUser(String email) {
+  /// Maps a Firebase [User] into the existing `{ 'user': { ... } }` shape so
+  /// ProfileScreen and the rest of the app keep working without edits.
+  Map<String, dynamic> _buildUser(User user) {
+    final email = user.email ?? '';
     final namePart = email.contains('@') ? email.split('@').first : email;
-    final fullName = namePart.isEmpty
-        ? 'Quiz User'
-        : namePart[0].toUpperCase() + namePart.substring(1);
+    final fullName = (user.displayName?.isNotEmpty ?? false)
+        ? user.displayName!
+        : (namePart.isEmpty
+            ? 'Quiz User'
+            : namePart[0].toUpperCase() + namePart.substring(1));
 
     return {
       'user': {
@@ -94,7 +108,7 @@ class AuthViewModel extends Notifier<AuthState> {
         'email': email,
         'role': 'Player',
         'status': 'Active',
-        'profileImg': '',
+        'profileImg': user.photoURL ?? '',
       },
     };
   }

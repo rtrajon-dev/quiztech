@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "509699757093",
+    "project_id": "quiztech-bdee7",
+    "storage_bucket": "quiztech-bdee7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:509699757093:android:24fb2d6041e2ff57d89bcc",
+        "android_client_info": {
+          "package_name": "io.technext.quiztech"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDr1jgsczcdVKcMagY8G9yIKsubM_ZYFUQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

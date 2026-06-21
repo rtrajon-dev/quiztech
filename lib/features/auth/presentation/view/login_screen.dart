@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -59,8 +60,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> handleLogin() async {
-    if (_formKey.currentState!.validate()) {
-      // Blank/offline login — any credentials are accepted.
+    if (!_formKey.currentState!.validate()) return;
+
+    try {
       await ref.read(authViewModelProvider.notifier).login(
             emailController.text.trim(),
             passwordController.text.trim(),
@@ -68,6 +70,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       // The GoRouter redirect navigates to Home once the session is set.
       showBottomToast("Login successful", bgColor: Colors.blue);
+    } on FirebaseAuthException catch (e) {
+      showBottomToast(e.message ?? "Login failed", bgColor: Colors.red);
     }
   }
 

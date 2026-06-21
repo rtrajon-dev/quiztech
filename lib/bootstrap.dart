@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'package:quiztech/app/app.dart';
 import 'package:quiztech/core/services/quiz_storage_service.dart';
+import 'package:quiztech/firebase_options.dart';
 
 /// Initializes platform bindings and local storage, then boots the app.
 Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase before anything touches FirebaseAuth.instance.
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // Open the Hive box used for quiz progress + scores.
   await QuizStorageService.init();
