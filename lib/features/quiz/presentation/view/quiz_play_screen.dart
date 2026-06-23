@@ -319,8 +319,8 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
                           key: ValueKey(currentQuestionIndex),
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(
-                              height: 60,
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(minHeight: 60),
                               child: Text(
                                 currentQuestion.text,
                                 style: TextStyle(
@@ -392,8 +392,9 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
                         opacity: feedbackText.isNotEmpty ? 1.0 : 0.0,
                         duration: const Duration(milliseconds: 400),
                         child: Container(
-                          height: 60.h,
-                          padding: EdgeInsets.symmetric(horizontal: 12.w),
+                          constraints: BoxConstraints(minHeight: 60.h),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 12.w, vertical: 8.h),
                           margin: EdgeInsets.only(top: 12.h),
                           decoration: BoxDecoration(
                             color: feedbackText.isNotEmpty
