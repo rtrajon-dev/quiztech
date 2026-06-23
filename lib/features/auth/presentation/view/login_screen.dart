@@ -18,6 +18,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController resetController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   bool _obscurePassword = true;
@@ -34,6 +35,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
+    resetController.dispose();
     super.dispose();
   }
 
@@ -74,6 +76,63 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       showBottomToast("Login successful", bgColor: Colors.blue);
     } on FirebaseAuthException catch (e) {
       showBottomToast(e.message ?? "Login failed", bgColor: Colors.red);
+    }
+  }
+
+  Future<void> handleForgotPassword() async {
+    resetController.text = emailController.text.trim();
+
+    final email = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text("Reset Password"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Enter your email and we'll send you a reset link.",
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: resetController,
+                keyboardType: TextInputType.emailAddress,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: "Email",
+                  prefixIcon: const Icon(Icons.email, color: Colors.green),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(resetController.text.trim()),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              child: const Text("Send", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (email == null || email.isEmpty) return;
+
+    try {
+      await ref.read(authViewModelProvider.notifier).sendPasswordReset(email);
+      showBottomToast("Reset link sent to $email", bgColor: Colors.blue);
+    } on FirebaseAuthException catch (e) {
+      showBottomToast(e.message ?? "Could not send reset email",
+          bgColor: Colors.red);
     }
   }
 
@@ -166,10 +225,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () {
-                          showBottomToast("Forgot password clicked",
-                              bgColor: Colors.orange);
-                        },
+                        onPressed: handleForgotPassword,
                         child: const Text(
                           "Forgot Password?",
                           style: TextStyle(color: Colors.green),
