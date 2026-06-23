@@ -14,6 +14,7 @@ class SignUpScreen extends ConsumerStatefulWidget {
 }
 
 class _SignUpScreenState extends ConsumerState<SignUpScreen> {
+  final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmController = TextEditingController();
@@ -32,6 +33,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   @override
   void dispose() {
+    nameController.dispose();
     emailController.dispose();
     passwordController.dispose();
     confirmController.dispose();
@@ -69,6 +71,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       await ref.read(authViewModelProvider.notifier).register(
             emailController.text.trim(),
             passwordController.text.trim(),
+            fullName: nameController.text.trim(),
           );
 
       // The GoRouter redirect navigates to Home once the account is created.
@@ -128,6 +131,23 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
+                    TextFormField(
+                      controller: nameController,
+                      keyboardType: TextInputType.name,
+                      textCapitalization: TextCapitalization.words,
+                      validator:
+                          RequiredValidator(errorText: "Enter your name").call,
+                      decoration: InputDecoration(
+                        labelText: "Full Name",
+                        hintText: "Enter your name",
+                        prefixIcon:
+                            const Icon(Icons.person, color: Colors.green),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     TextFormField(
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,

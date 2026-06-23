@@ -69,14 +69,31 @@ class AuthViewModel extends Notifier<AuthState> {
     }
   }
 
-  /// Create a new account. Throws [FirebaseAuthException] on failure.
-  Future<void> register(String email, String password) async {
+  /// Create a new account and optionally set the display name.
+  /// Throws [FirebaseAuthException] on failure.
+  Future<void> register(
+    String email,
+    String password, {
+    String? fullName,
+  }) async {
     state = state.copyWith(isLoading: true);
     try {
-      await _auth.createUserWithEmailAndPassword(
+      final cred = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      final name = fullName?.trim() ?? '';
+      if (name.isNotEmpty) {
+        // Persist the name to the Firebase profile. authStateChanges() does
+        // not fire on profile edits, so re-sync state from the fresh user.
+        await cred.user?.updateDisplayName(name);
+        await cred.user?.reload();
+        final refreshed = _auth.currentUser;
+        if (refreshed != null) {
+          state = state.copyWith(user: _buildUser(refreshed));
+        }
+      }
     } finally {
       state = state.copyWith(isLoading: false);
     }
