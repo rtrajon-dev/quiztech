@@ -28,6 +28,7 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
   bool isCorrect = false;
 
   Timer? countdownTimer;
+  Timer? _nextQuestionTimer;
   int remainingSeconds = 60;
   bool timeUp = false;
 
@@ -49,6 +50,8 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
     player.stop();
     player.dispose();
     countdownTimer?.cancel();
+    _nextQuestionTimer?.cancel();
+    scrollController.dispose();
     super.dispose();
   }
 
@@ -99,7 +102,14 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
         });
 
         int nextCountdown = 3;
-        Timer.periodic(const Duration(seconds: 1), (nextTimer) {
+        _nextQuestionTimer?.cancel();
+        _nextQuestionTimer =
+            Timer.periodic(const Duration(seconds: 1), (nextTimer) {
+          // Stop firing if the user has left the quiz screen.
+          if (!mounted) {
+            nextTimer.cancel();
+            return;
+          }
           nextCountdown--;
           if (nextCountdown > 0) {
             setState(() {
@@ -736,7 +746,7 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
 
     final yourScore = score * quiz.pointsPerCorrect;
     final totalScore = quiz.questions.length * quiz.pointsPerCorrect;
-    final percentage = (score / totalScore) * 100;
+    final percentage = (yourScore / totalScore) * 100;
 
     String title;
     String emoji;
